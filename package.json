@@ -1,0 +1,48 @@
+{
+  "name": "active-handles",
+  "version": "0.0.0",
+  "description": "Prints out information about the process's active handles, including function source and location",
+  "main": "index.js",
+  "scripts": {
+    "test-main": "tape test/*.js",
+    "test-0.10": " (cd ./node_modules/function-origin && nave use 0.10 node-gyp rebuild) && nave use 0.10 npm run test-main",
+    "test-0.12": " (cd ./node_modules/function-origin && nave use 0.12 node-gyp rebuild) && nave use 0.12 npm run test-main",
+    "test-iojs": " (cd ./node_modules/function-origin && nave use latest node-gyp rebuild) && nave use latest npm run test-main",
+    "test-all": "npm run test-main && npm run test-0.10 && npm run test-0.12 && npm run test-iojs",
+    "test": "if [ -e $TRAVIS ]; then (cd ./node_modules/function-origin && node-gyp rebuild) && npm run test-all; else npm run test-main; fi"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/thlorenz/active-handles.git"
+  },
+  "homepage": "https://github.com/thlorenz/active-handles",
+  "dependencies": {
+    "ansicolors": "~0.3.2",
+    "cardinal": "~0.5.0",
+    "function-origin": "git://github.com/thlorenz/function-origin.git",
+    "xtend": "~4.0.0"
+  },
+  "devDependencies": {
+    "nave": "~0.5.1",
+    "tape": "~4.0.0"
+  },
+  "keywords": [
+    "active",
+    "handles",
+    "debug",
+    "profile",
+    "leak"
+  ],
+  "author": {
+    "name": "Thorsten Lorenz",
+    "email": "thlorenz@gmx.de",
+    "url": "http://thlorenz.com"
+  },
+  "license": {
+    "type": "MIT",
+    "url": "https://github.com/thlorenz/active-handles/blob/master/LICENSE"
+  },
+  "engine": {
+    "node": ">=0.10"
+  }
+}
