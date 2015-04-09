@@ -27,9 +27,17 @@ function resolveHandle(handle, cb) {
 
   for (var next = handle._idleNext; !!next && !wasVisited(next); next = next._idleNext) {
     visited.push(next);
-    if (!next.hasOwnProperty('_onTimeout')) continue;
+    var repeatIsFn = typeof next._repeat === 'function';
+    var hasWrappedCallback = typeof next._wrappedCallback === 'function';
 
-    fn = next._onTimeout
+    if (!repeatIsFn && !hasWrappedCallback && !next.hasOwnProperty('_onTimeout')) continue;
+
+    // starting with io.js 1.6.2 when using setInterval the timer handle's
+    // _repeat property references the wrapped function so we prefer that
+    fn = repeatIsFn
+        ? next._repeat
+        : hasWrappedCallback ? next._wrappedCallback : next._onTimeout;
+
     src = fn.toString();
 
     location = getFunctionLocation(fn)
@@ -84,11 +92,18 @@ function resolveHandles(handles) {
   return resolvedHandles;
 }
 
+function versionGreaterEqualOneSixTwo(v) {
+  var digits = v.slice(1).split('.');
+  if (digits.length !== 3) return false; // can't be sure
+  if (digits[0] < 1 || digits[1] < 6 || digits[2] < 2) return false;
+  return true;
+}
+
 /**
  * Gathers information about all currently active handles.
- * Active handles are obtained via `process._getActiveHandles` 
+ * Active handles are obtained via `process._getActiveHandles`
  * and location and name of each is resolved.
- * 
+ *
  * @name activeHandles
  * @function
  * @return {Array.<Object>} handles each with the following properties
@@ -101,7 +116,7 @@ function resolveHandles(handles) {
  * @return {String}   handle.location.file          full path to the file in which the handle was defined
  * @return {Number}   handle.location.line          line where the handle was defined
  * @return {Number}   handle.location.column        column where the handle was defined
- * @return {String}   handle.location.inferredName  name that is used when function declaration is anonymous 
+ * @return {String}   handle.location.inferredName  name that is used when function declaration is anonymous
  */
 exports = module.exports = function activeHandles() {
   var handles = process._getActiveHandles();
@@ -112,7 +127,7 @@ exports = module.exports = function activeHandles() {
 /**
  * Convenience function that first calls @see activeHandles and
  * prints the information to stdout.
- * 
+ *
  * @name activeHandles::print
  * @function
  */
@@ -133,4 +148,30 @@ exports.print = function print() {
       , colors.brightBlack(locString)
       , h.highlighted);
   }
+}
+
+/**
+ * Hooks `setInterval` calls in order to expose the passed handle.
+ * NOTE: not needed in `io.js >=v1.6.2` and will not hook for those versions.
+ *
+ * The handle is wrapped. In older node versions it is not exposed.
+ * The hooked version of `setInterval` will expose the wrapped callback
+ * so its information can be retrieved later.
+ *
+ * @name activeHandles::hookSetInterval
+ * @function
+ */
+exports.hookSetInterval = function () {
+  // no need to hook things starting with io.js 1.6.2 (see resolveHandle)
+  if (versionGreaterEqualOneSixTwo(process.version)) return;
+  var timers = require('timers');
+  var setInterval_ = timers.setInterval;
+
+  function setIntervalHook() {
+    var t = setInterval_.apply(timers, arguments);
+    t._wrappedCallback = arguments[0];
+    return t;
+  }
+
+  timers.setInterval = setIntervalHook.bind(timers);
 }

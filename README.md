@@ -23,7 +23,7 @@ Me.prototype.timeout = function () {
 }
 
 var assignedTimeout = function () {
-  // here the name the function was assigned to 
+  // here the name the function was assigned to
   // is returned as the function name
 }
 
@@ -37,11 +37,13 @@ activeHandles.print();
 
 ![assets/setTimeout.png](assets/setTimeout.png)
 
-## Status
+## Caveats
 
-At this point gathers correct information for handles created via `setTimeout`.
+For any version `<= v1.6.2` the `setInterval` function has to be hooked in order for this to work for `setInterval`
+created handles.
 
-`setInterval` handles are wrapped, so the wrapper function is returned instead - *working on improving that*.
+In order to do that call `activeHandles.hookSetInterval()` **before** any calls to `setInterval` occurr. This is
+demonstrated in [this example](https://github.com/thlorenz/active-handles/blob/master/examples/setInterval.js#L5).
 
 ## Installation
 
@@ -76,7 +78,7 @@ and location and name of each is resolved.</p>
 <li>
 <a href="https://github.com/thlorenz/active-handles/blob/master/index.js">index.js</a>
 <span>, </span>
-<a href="https://github.com/thlorenz/active-handles/blob/master/index.js#L87">lineno 87</a>
+<a href="https://github.com/thlorenz/active-handles/blob/master/index.js#L102">lineno 102</a>
 </li>
 </ul></dd>
 </dl>
@@ -228,6 +230,28 @@ Type
 </ul>
 </dd>
 <dt>
+<h4 class="name" id="activeHandles::hookSetInterval"><span class="type-signature"></span>activeHandles::hookSetInterval<span class="signature">()</span><span class="type-signature"></span></h4>
+</dt>
+<dd>
+<div class="description">
+<p>Hooks <code>setInterval</code> calls in order to expose the passed handle.
+NOTE: not needed in <code>io.js &gt;=v1.6.2</code> and will not hook for those versions.</p>
+<p>The handle is wrapped. In older node versions it is not exposed.
+The hooked version of <code>setInterval</code> will expose the wrapped callback
+so its information can be retrieved later.</p>
+</div>
+<dl class="details">
+<dt class="tag-source">Source:</dt>
+<dd class="tag-source"><ul class="dummy">
+<li>
+<a href="https://github.com/thlorenz/active-handles/blob/master/index.js">index.js</a>
+<span>, </span>
+<a href="https://github.com/thlorenz/active-handles/blob/master/index.js#L153">lineno 153</a>
+</li>
+</ul></dd>
+</dl>
+</dd>
+<dt>
 <h4 class="name" id="activeHandles::print"><span class="type-signature"></span>activeHandles::print<span class="signature">()</span><span class="type-signature"></span></h4>
 </dt>
 <dd>
@@ -241,7 +265,7 @@ prints the information to stdout.</p>
 <li>
 <a href="https://github.com/thlorenz/active-handles/blob/master/index.js">index.js</a>
 <span>, </span>
-<a href="https://github.com/thlorenz/active-handles/blob/master/index.js#L112">lineno 112</a>
+<a href="https://github.com/thlorenz/active-handles/blob/master/index.js#L127">lineno 127</a>
 </li>
 </ul></dd>
 </dl>
