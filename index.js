@@ -173,5 +173,5 @@ exports.hookSetInterval = function () {
     return t;
   }
 
-  timers.setInterval = setIntervalHook.bind(timers);
+  timers.setInterval = setIntervalHook;
 }
