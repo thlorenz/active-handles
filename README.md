@@ -45,6 +45,9 @@ created handles.
 In order to do that call `activeHandles.hookSetInterval()` **before** any calls to `setInterval` occurr. This is
 demonstrated in [this example](https://github.com/thlorenz/active-handles/blob/master/examples/setInterval.js#L5).
 
+Handles of `net` and `http` modules log handles from inside core *instead of your handle*, leaving you to hunt down
+where you created these connections.
+
 ## Installation
 
     npm install active-handles

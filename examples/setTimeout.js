@@ -20,7 +20,7 @@ Me.prototype.timeout = function () {
 }
 
 var assignedTimeout = function () {
-  // here the name the function was assigned to 
+  // here the name the function was assigned to
   // is returned as the function name
 }
 
