@@ -15,14 +15,64 @@ function highlightSource(s) {
   }
 }
 
+function functionInfo(fn, handle) {
+  var name;
+  var src = fn.toString();
+
+  var location = getFunctionLocation(fn)
+  // v8 zero bases lines
+  if (location) location.line++;
+
+  // handle anonymous functions and try to figure out a meaningful function name
+  var anonymous = false;
+  if (!fn.name || !fn.name.length) {
+    name = location.inferredName && location.inferredName.length
+        ? location.inferredName
+        : '__unknown_function_name__';
+
+    anonymous = true;
+  } else {
+    name = fn.name;
+  }
+
+  // function () { ... is not by itself parsable
+  // x = function () { .. is
+  var highlighted = anonymous
+    ? highlightSource(name + ' = ' + src)
+    : highlightSource(src);
+
+  return {
+      fn          : fn
+    , name        : name
+    , source      : src
+    , highlighted : highlighted
+    , location    : location
+    , handle      : handle
+  };
+}
+
+function isFunction(x) {
+  return typeof x === 'function';
+}
+
 function resolveHandle(handle, cb) {
   var visited = []
+    , resolvedFns = []
     , resolved = []
-    , fn, src, location
-    , highlighted, name, anonymous
+    , fn
+    , addedInfo
 
   function wasVisited(h) {
     return ~visited.indexOf(h);
+  }
+
+  function addInfo(fn) {
+    if (~resolvedFns.indexOf(fn)) return;
+    resolvedFns.push(fn);
+
+    var info = functionInfo(fn);
+    resolved.push(info);
+    return info;
   }
 
   for (var next = handle._idleNext; !!next && !wasVisited(next); next = next._idleNext) {
@@ -38,38 +88,33 @@ function resolveHandle(handle, cb) {
         ? next._repeat
         : hasWrappedCallback ? next._wrappedCallback : next._onTimeout;
 
-    src = fn.toString();
+    addedInfo = addInfo(fn, next);
+    addedInfo.msecs = next._idleTimeout;
+    addedInfo.type = hasWrappedCallback || repeatIsFn ? 'setInterval' : 'setTimeout';
+  }
 
-    location = getFunctionLocation(fn)
-    // v8 zero bases lines
-    if (location) location.line++;
+  function addHandleFn(key) {
+    var value = handle._handle[key];
+    if (!isFunction(value)) return;
+    var addedInfo = addInfo(value, handle._handle);
+    if (handle._handle.fd) {
+      addedInfo.fd = handle._handle.fd;
 
-    // handle anonymous functions and try to figure out a meaningful function name
-    anonymous = false;
-    if (!fn.name || !fn.name.length) {
-      name = location.inferredName && location.inferredName.length
-          ? location.inferredName
-          : '__unknown_function_name__';
+      switch (key) {
+        case 'onconnection':
+          addedInfo.type = 'net connection';
+          break;
+        case 'onread':
+          addedInfo.type = 'net client connection';
+          break;
+        default:
+          addInfo.type = 'unknown';
 
-      anonymous = true;
-    } else {
-      name = fn.name;
+      }
     }
-
-    // function () { ... is not by itself parsable
-    // x = function () { .. is
-    highlighted = anonymous
-      ? highlightSource(name + ' = ' + src)
-      : highlightSource(src);
-
-    resolved.push({
-        msecs       : next._idleTimeout
-      , fn          : fn
-      , name        : name
-      , source      : src
-      , highlighted : highlighted
-      , location    : location
-    })
+  }
+  if (handle._handle) {
+    Object.keys(handle._handle).forEach(addHandleFn);
   }
 
   return resolved;
@@ -132,7 +177,7 @@ exports = module.exports = function activeHandles() {
  * @function
  */
 exports.print = function print() {
-  var h, loc, locString;
+  var h, loc, locString, fdString, highlightString, printed = {};
 
   var handles = exports();
   for (var i = 0, len = handles.length; i < len; i++) {
@@ -143,10 +188,20 @@ exports.print = function print() {
       ? format('%s:%d:%d', loc.file, loc.line, loc.column)
       : 'Unknown location';
 
-    console.log('\n%s %s\n%s'
+    highlightString = printed[locString]
+      ? 'Count: ' + (printed[locString] + 1) + '. Source printed above'
+      : h.highlighted;
+
+    fdString = h.fd ? ', fd = ' + h.fd : '';
+
+    console.log('\n%s %s (%s%s)\n%s'
       , colors.green(h.name + ':')
       , colors.brightBlack(locString)
-      , h.highlighted);
+      , h.type || 'unknown type'
+      , fdString
+      , highlightString);
+
+    printed[locString] = (printed[locString] || 0) + 1;
   }
 }
 

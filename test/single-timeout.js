@@ -20,6 +20,7 @@ function checkOne(t, fn, name, line) {
   t.equal(h.msecs, TIMEOUT, 'reports correct timeout')
   t.equal(h.name, name, 'resolves function name correctly')
   t.equal(h.source, fn.toString(), 'includes function source')
+  t.equal(h.type, 'setTimeout', 'identifies type as setTimeout')
   t.equal(l.file, __filename, 'location has correct filename')
   t.equal(l.line, line, 'location has correct line')
 }
@@ -30,7 +31,7 @@ test('\nsetting timeout with named handle', function (t) {
   t.equal(activeHandles().length, 0, 'initially no handles are active')
 
   setTimeout(timeout, TIMEOUT);
-  checkOne(t, timeout, 'timeout', 28)
+  checkOne(t, timeout, 'timeout', 29)
 })
 
 test('\nsetting timeout with handle assigned to var', function (t) {
@@ -39,7 +40,7 @@ test('\nsetting timeout with handle assigned to var', function (t) {
   t.equal(activeHandles().length, 0, 'initially no handles are active')
 
   setTimeout(timeout, TIMEOUT);
-  checkOne(t, timeout, 'timeout', 37)
+  checkOne(t, timeout, 'timeout', 38)
 })
 
 test('\nsetting timeout with handle assigned to global', function (t) {
@@ -48,7 +49,7 @@ test('\nsetting timeout with handle assigned to global', function (t) {
   t.equal(activeHandles().length, 0, 'initially no handles are active')
 
   setTimeout(global.timeout, TIMEOUT);
-  checkOne(t, global.timeout, 'global.timeout', 46)
+  checkOne(t, global.timeout, 'global.timeout', 47)
 })
 
 test('\nsetting timeout with handle assigned to a prototype', function (t) {
@@ -58,19 +59,19 @@ test('\nsetting timeout with handle assigned to a prototype', function (t) {
   t.equal(activeHandles().length, 0, 'initially no handles are active')
 
   setTimeout(Me.prototype.timeout, TIMEOUT);
-  checkOne(t, Me.prototype.timeout, 'Me.timeout', 56)
+  checkOne(t, Me.prototype.timeout, 'Me.timeout', 57)
 })
 
 test('\nsetting timeout with inlined handle unnamed', function (t) {
   t.equal(activeHandles().length, 0, 'initially no handles are active')
 
   setTimeout(function () { /* name your functions ;) */ t.end() }, TIMEOUT);
-  checkOne(t, function () { /* name your functions ;) */ t.end() }, '__unknown_function_name__', 67)
+  checkOne(t, function () { /* name your functions ;) */ t.end() }, '__unknown_function_name__', 68)
 })
 
 test('\nsetting timeout with inlined handle named', function (t) {
   t.equal(activeHandles().length, 0, 'initially no handles are active')
 
   setTimeout(function foo() { t.end() }, TIMEOUT);
-  checkOne(t, function foo() { t.end() }, 'foo', 74)
+  checkOne(t, function foo() { t.end() }, 'foo', 75)
 })
