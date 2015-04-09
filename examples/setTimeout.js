@@ -28,5 +28,8 @@ setTimeout(onTimeout, 10);
 setTimeout(global.onOtherTimeout, 10);
 setTimeout(new Me().timeout, 20);
 setTimeout(assignedTimeout, 5);
+setTimeout(function () {
+  // inline anonymous function
+}, 10);
 
 activeHandles.print();

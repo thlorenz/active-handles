@@ -60,3 +60,17 @@ test('\nsetting timeout with handle assigned to a prototype', function (t) {
   setTimeout(Me.prototype.timeout, TIMEOUT);
   checkOne(t, Me.prototype.timeout, 'Me.timeout', 56)
 })
+
+test('\nsetting timeout with inlined handle unnamed', function (t) {
+  t.equal(activeHandles().length, 0, 'initially no handles are active')
+
+  setTimeout(function () { /* name your functions ;) */ t.end() }, TIMEOUT);
+  checkOne(t, function () { /* name your functions ;) */ t.end() }, '__unknown_function_name__', 67)
+})
+
+test('\nsetting timeout with inlined handle named', function (t) {
+  t.equal(activeHandles().length, 0, 'initially no handles are active')
+
+  setTimeout(function foo() { t.end() }, TIMEOUT);
+  checkOne(t, function foo() { t.end() }, 'foo', 74)
+})

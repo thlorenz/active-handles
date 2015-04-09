@@ -26,7 +26,7 @@ function checkOne(t, fn, name, line) {
   t.equal(l.line, line, 'location has correct line')
 }
 
-test('\nsetting timeout with named handle', function (t) {
+test('\nsetting interval with named handle', function (t) {
   function timeout() { clearInterval(iv); t.end() }
 
   t.equal(activeHandles().length, 0, 'initially no handles are active')
@@ -35,7 +35,7 @@ test('\nsetting timeout with named handle', function (t) {
   checkOne(t, timeout, 'timeout', 30)
 })
 
-test('\nsetting timeout with handle assigned to var', function (t) {
+test('\nsetting interval with handle assigned to var', function (t) {
   var timeout = function () { clearInterval(iv); t.end() }
 
   t.equal(activeHandles().length, 0, 'initially no handles are active')
@@ -44,7 +44,7 @@ test('\nsetting timeout with handle assigned to var', function (t) {
   checkOne(t, timeout, 'timeout', 39)
 })
 
-test('\nsetting timeout with handle assigned to global', function (t) {
+test('\nsetting interval with handle assigned to global', function (t) {
   global.timeout = function () { clearInterval(iv); t.end() }
 
   t.equal(activeHandles().length, 0, 'initially no handles are active')
@@ -53,7 +53,7 @@ test('\nsetting timeout with handle assigned to global', function (t) {
   checkOne(t, global.timeout, 'global.timeout', 48)
 })
 
-test('\nsetting timeout with handle assigned to a prototype', function (t) {
+test('\nsetting interval with handle assigned to a prototype', function (t) {
   function Me() {}
   Me.prototype.timeout = function () { clearInterval(iv); t.end() }
 
@@ -61,4 +61,18 @@ test('\nsetting timeout with handle assigned to a prototype', function (t) {
 
   var iv = setInterval(Me.prototype.timeout, TIMEOUT);
   checkOne(t, Me.prototype.timeout, 'Me.timeout', 58)
+})
+
+test('\nsetting interval with inlined handle unnamed', function (t) {
+  t.equal(activeHandles().length, 0, 'initially no handles are active')
+
+  var iv = setInterval(function () { /* name your functions ;) */ clearInterval(iv); t.end() }, TIMEOUT);
+  checkOne(t, function () { /* name your functions ;) */ clearInterval(iv); t.end() }, '__unknown_function_name__', 69)
+})
+
+test('\nsetting interval with inlined handle named', function (t) {
+  t.equal(activeHandles().length, 0, 'initially no handles are active')
+
+  var iv = setInterval(function foo() { clearInterval(iv); t.end() }, TIMEOUT);
+  checkOne(t, function foo() { clearInterval(iv); t.end() }, 'foo', 76)
 })
