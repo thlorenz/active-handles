@@ -5,37 +5,20 @@ Prints out information about the process's active handles, including function so
 ```js
 var activeHandles = require('active-handles');
 
-function onTimeout() {
-  // here the function declaration is named, easy enough
-}
-
-global.onOtherTimeout = function () {
-  // global functions are bad, even for timeouts ;)
-  // let's fix that ;)
-  delete global.onOtherTimeout;
-}
-
-function Me() {}
-Me.prototype.timeout = function () {
-  // assigning to prototype property results in
-  // the function name being derived from the
-  // prototype name and the property name
-}
-
-var assignedTimeout = function () {
-  // here the name the function was assigned to
-  // is returned as the function name
-}
-
-setTimeout(onTimeout, 10);
-setTimeout(global.onOtherTimeout, 10);
-setTimeout(new Me().timeout, 20);
-setTimeout(assignedTimeout, 5);
+// run your program, launch a server, call setTimeout or similar
+// in order to create some handles and then call the below
 
 activeHandles.print();
 ```
 
-![assets/setTimeout.png](assets/setTimeout.png)
+![assets/mixed.png](assets/mixed.png)
+
+*Shows handles of multiple types created via
+[examples/mixed.js](https://github.com/thlorenz/active-handles/blob/master/examples/mixed.js)*
+
+## Installation
+
+    npm install active-handles
 
 ## Caveats
 
@@ -47,10 +30,6 @@ demonstrated in [this example](https://github.com/thlorenz/active-handles/blob/m
 
 Handles of `net` and `http` modules log handles from inside core *instead of your handle*, leaving you to hunt down
 where you created these connections.
-
-## Installation
-
-    npm install active-handles
 
 ## API
 
