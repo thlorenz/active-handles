@@ -67,7 +67,7 @@ where you created these connections.
 </div>
 <dl>
 <dt>
-<h4 class="name" id="activeHandles"><span class="type-signature"></span>activeHandles<span class="signature">()</span><span class="type-signature"> &rarr; {Array.&lt;Object>}</span></h4>
+<h4 class="name" id="activeHandles"><span class="type-signature"></span>activeHandles<span class="signature">(options)</span><span class="type-signature"> &rarr; {Array.&lt;Object>}</span></h4>
 </dt>
 <dd>
 <div class="description">
@@ -75,13 +75,75 @@ where you created these connections.
 Active handles are obtained via <code>process._getActiveHandles</code>
 and location and name of each is resolved.</p>
 </div>
+<h5>Parameters:</h5>
+<table class="params">
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Argument</th>
+<th class="last">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="name"><code>options</code></td>
+<td class="type">
+<span class="param-type">Object</span>
+</td>
+<td class="attributes">
+</td>
+<td class="description last"></td>
+</tr>
+<tr>
+<td class="name"><code>opts.handles</code></td>
+<td class="type">
+<span class="param-type">Array.&lt;Object>=</span>
+</td>
+<td class="attributes">
+&lt;optional><br>
+</td>
+<td class="description last"><p>handles to get info for (default: <code>process._getActiveHandles()</code>)</p></td>
+</tr>
+<tr>
+<td class="name"><code>opts.source</code></td>
+<td class="type">
+<span class="param-type">Boolean</span>
+</td>
+<td class="attributes">
+&lt;optional><br>
+</td>
+<td class="description last"><p>include source (default: <code>true</code>)</p></td>
+</tr>
+<tr>
+<td class="name"><code>opts.highlight</code></td>
+<td class="type">
+<span class="param-type">Boolean</span>
+</td>
+<td class="attributes">
+&lt;optional><br>
+</td>
+<td class="description last"><p>include highlighted source (default: <code>true</code>)</p></td>
+</tr>
+<tr>
+<td class="name"><code>opts.attachHandle</code></td>
+<td class="type">
+<span class="param-type">Boolean</span>
+</td>
+<td class="attributes">
+&lt;optional><br>
+</td>
+<td class="description last"><p>attaches inspected handle for further inspection (default: <code>false</code>)</p></td>
+</tr>
+</tbody>
+</table>
 <dl class="details">
 <dt class="tag-source">Source:</dt>
 <dd class="tag-source"><ul class="dummy">
 <li>
 <a href="https://github.com/thlorenz/active-handles/blob/master/index.js">index.js</a>
 <span>, </span>
-<a href="https://github.com/thlorenz/active-handles/blob/master/index.js#L102">lineno 102</a>
+<a href="https://github.com/thlorenz/active-handles/blob/master/index.js#L152">lineno 152</a>
 </li>
 </ul></dd>
 </dl>
@@ -249,26 +311,58 @@ so its information can be retrieved later.</p>
 <li>
 <a href="https://github.com/thlorenz/active-handles/blob/master/index.js">index.js</a>
 <span>, </span>
-<a href="https://github.com/thlorenz/active-handles/blob/master/index.js#L153">lineno 153</a>
+<a href="https://github.com/thlorenz/active-handles/blob/master/index.js#L227">lineno 227</a>
 </li>
 </ul></dd>
 </dl>
 </dd>
 <dt>
-<h4 class="name" id="activeHandles::print"><span class="type-signature"></span>activeHandles::print<span class="signature">()</span><span class="type-signature"></span></h4>
+<h4 class="name" id="activeHandles::print"><span class="type-signature"></span>activeHandles::print<span class="signature">(options)</span><span class="type-signature"></span></h4>
 </dt>
 <dd>
 <div class="description">
 <p>Convenience function that first calls @see activeHandles and
 prints the information to stdout.</p>
 </div>
+<h5>Parameters:</h5>
+<table class="params">
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Argument</th>
+<th class="last">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="name"><code>options</code></td>
+<td class="type">
+<span class="param-type">Object</span>
+</td>
+<td class="attributes">
+</td>
+<td class="description last"></td>
+</tr>
+<tr>
+<td class="name"><code>opts.highlight</code></td>
+<td class="type">
+<span class="param-type">Boolean</span>
+</td>
+<td class="attributes">
+&lt;optional><br>
+</td>
+<td class="description last"><p>print highlighted source (default: <code>true</code>)</p></td>
+</tr>
+</tbody>
+</table>
 <dl class="details">
 <dt class="tag-source">Source:</dt>
 <dd class="tag-source"><ul class="dummy">
 <li>
 <a href="https://github.com/thlorenz/active-handles/blob/master/index.js">index.js</a>
 <span>, </span>
-<a href="https://github.com/thlorenz/active-handles/blob/master/index.js#L127">lineno 127</a>
+<a href="https://github.com/thlorenz/active-handles/blob/master/index.js#L183">lineno 183</a>
 </li>
 </ul></dd>
 </dl>

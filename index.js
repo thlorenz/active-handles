@@ -15,9 +15,9 @@ function highlightSource(s) {
   }
 }
 
-function functionInfo(fn, handle) {
+function functionInfo(fn, handle, opts) {
   var name;
-  var src = fn.toString();
+  var src, highlighted = null;
 
   var location = getFunctionLocation(fn)
   // v8 zero bases lines
@@ -35,48 +35,49 @@ function functionInfo(fn, handle) {
     name = fn.name;
   }
 
-  // function () { ... is not by itself parsable
-  // x = function () { .. is
-  var highlighted = anonymous
-    ? highlightSource(name + ' = ' + src)
-    : highlightSource(src);
+  if (opts.highlight || opts.source) {
+    src = fn.toString();
+    if (opts.highlight) {
+      // function () { ... is not by itself parsable
+      // x = function () { .. is
+      highlighted = anonymous
+        ? highlightSource(name + ' = ' + src)
+        : highlightSource(src);
+    }
+  }
 
-  return {
+  var ret = {
       fn          : fn
     , name        : name
-    , source      : src
-    , highlighted : highlighted
     , location    : location
-    , handle      : handle
-  };
+  }
+
+  if (opts.source) ret.source = src;
+  if (opts.highlight) ret.highlighted = highlighted;
+  if (opts.attachHandle) ret.handle = handle;
+
+  return ret;
 }
 
-function isFunction(x) {
-  return typeof x === 'function';
-}
-
-function resolveHandle(handle, cb) {
-  var visited = []
-    , resolvedFns = []
+function resolveHandle(handle, opts) {
+  var visited = {}
+    , resolvedFns = {}
     , resolved = []
     , fn
     , addedInfo
 
-  function wasVisited(h) {
-    return ~visited.indexOf(h);
-  }
-
   function addInfo(fn) {
-    if (~resolvedFns.indexOf(fn)) return;
-    resolvedFns.push(fn);
+    if (resolvedFns[fn]) return;
+    resolvedFns[fn] = true;
 
-    var info = functionInfo(fn);
+    var info = functionInfo(fn, handle, opts);
     resolved.push(info);
     return info;
   }
 
-  for (var next = handle._idleNext; !!next && !wasVisited(next); next = next._idleNext) {
-    visited.push(next);
+  // timer handles created via setTimeout or setInterval
+  for (var next = handle._idleNext; !!next && !visited[next]; next = next._idleNext) {
+    visited[next] = true;
     var repeatIsFn = typeof next._repeat === 'function';
     var hasWrappedCallback = typeof next._wrappedCallback === 'function';
 
@@ -95,7 +96,7 @@ function resolveHandle(handle, cb) {
 
   function addHandleFn(key) {
     var value = handle._handle[key];
-    if (!isFunction(value)) return;
+    if (typeof value !== 'function') return;
     var addedInfo = addInfo(value, handle._handle);
     if (handle._handle.fd) {
       addedInfo.fd = handle._handle.fd;
@@ -113,15 +114,15 @@ function resolveHandle(handle, cb) {
       }
     }
   }
-  if (handle._handle) {
+  // handles created by the net module via direct use or of http/https
+  if (handle._handle)
     Object.keys(handle._handle).forEach(addHandleFn);
-  }
 
   return resolved;
 }
 
-function resolveHandles(handles) {
-  var tasks = handles.length;
+function resolveHandles(opts) {
+  var tasks = opts.handles.length;
   var resolvedHandles = [];
 
   function pushHandle(h) {
@@ -129,11 +130,11 @@ function resolveHandles(handles) {
   }
 
   function resolveCurrentHandle(handle) {
-    var resolved = resolveHandle(handle);
+    var resolved = resolveHandle(handle, opts);
     resolved.forEach(pushHandle);
   }
 
-  handles.forEach(resolveCurrentHandle);
+  opts.handles.forEach(resolveCurrentHandle);
   return resolvedHandles;
 }
 
@@ -144,6 +145,10 @@ function versionGreaterEqualOneSixTwo(v) {
   return true;
 }
 
+var defaultOpts = {
+  source: true, highlight: true, attachHandle: false
+}
+
 /**
  * Gathers information about all currently active handles.
  * Active handles are obtained via `process._getActiveHandles`
@@ -151,6 +156,11 @@ function versionGreaterEqualOneSixTwo(v) {
  *
  * @name activeHandles
  * @function
+ * @param  {Object}           options
+ * @param  {Array.<Object>=}  opts.handles      handles to get info for (default: `process._getActiveHandles()`)
+ * @param  {Boolean=}         opts.source       include source (default: `true`)
+ * @param  {Boolean=}         opts.highlight    include highlighted source (default: `true`)
+ * @param  {Boolean=}         opts.attachHandle attaches inspected handle for further inspection (default: `false`)
  * @return {Array.<Object>} handles each with the following properties
  * @return {Number}   handle.msecs         timeout specified for the handle
  * @return {Function} handle.fn            the handle itself
@@ -163,10 +173,11 @@ function versionGreaterEqualOneSixTwo(v) {
  * @return {Number}   handle.location.column        column where the handle was defined
  * @return {String}   handle.location.inferredName  name that is used when function declaration is anonymous
  */
-exports = module.exports = function activeHandles() {
-  var handles = process._getActiveHandles();
-  if (!handles.length) return [];
-  return resolveHandles(handles);
+exports = module.exports = function activeHandles(opts) {
+  opts = xtend(defaultOpts, opts);
+  opts.handles = opts.handles || process._getActiveHandles();
+  if (!opts.handles.length) return [];
+  return resolveHandles(opts);
 }
 
 /**
@@ -174,12 +185,18 @@ exports = module.exports = function activeHandles() {
  * prints the information to stdout.
  *
  * @name activeHandles::print
+ * @param  {Object}   options
+ * @param  {Boolean=} opts.highlight print highlighted source (default: `true`)
  * @function
  */
-exports.print = function print() {
-  var h, loc, locString, fdString, highlightString, printed = {};
+exports.print = function print(opts) {
+  var h, loc, locString, fdString, printed = {};
+  var highlightString = '';
 
-  var handles = exports();
+  opts = xtend(defaultOpts, opts);
+  opts.source = false;
+
+  var handles = exports(opts);
   for (var i = 0, len = handles.length; i < len; i++) {
     h = handles[i];
     loc = h.location;
@@ -188,9 +205,11 @@ exports.print = function print() {
       ? format('%s:%d:%d', loc.file, loc.line, loc.column)
       : 'Unknown location';
 
-    highlightString = printed[locString]
-      ? 'Count: ' + (printed[locString] + 1) + '. Source printed above'
-      : h.highlighted;
+    if (opts.highlight) {
+      highlightString = printed[locString]
+        ? 'Count: ' + (printed[locString] + 1) + '. Source printed above'
+        : h.highlighted;
+    }
 
     fdString = h.fd ? ', fd = ' + h.fd : '';
 
@@ -230,3 +249,6 @@ exports.hookSetInterval = function () {
 
   timers.setInterval = setIntervalHook;
 }
+
+// used for testing
+exports._defaultOpts = defaultOpts;

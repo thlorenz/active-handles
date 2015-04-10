@@ -19,7 +19,7 @@
   "dependencies": {
     "ansicolors": "~0.3.2",
     "cardinal": "~0.5.0",
-    "function-origin": "git://github.com/thlorenz/function-origin.git",
+    "function-origin": "~1.1.0",
     "xtend": "~4.0.0"
   },
   "devDependencies": {
