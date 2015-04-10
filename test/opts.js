@@ -2,6 +2,7 @@
 
 var test = require('tape');
 var activeHandles = require('../')
+var core = require('../core')
 var xtend = require('xtend')
 var TIMEOUT = 20
 
@@ -21,7 +22,7 @@ function checkOne(t, opts) {
 
   var fn = timeout
     , name = 'timeout'
-    , line = 19
+    , line = 20
 
   var firstHandle = process._getActiveHandles()[0];
   var handles = activeHandles(opts);
@@ -29,7 +30,7 @@ function checkOne(t, opts) {
     , l = h.location;
 
   // xtend after the call to ensure it is xtended in impl as well
-  opts = xtend(activeHandles._defaultOpts, opts)
+  opts = xtend(core.defaultOpts, opts)
 
   t.equal(handles.length, 1, 'returns one handle')
   t.equal(h.msecs, TIMEOUT, 'reports correct timeout')
@@ -38,8 +39,10 @@ function checkOne(t, opts) {
   t.equal(l.file, __filename, 'location has correct filename')
   t.equal(l.line, line, 'location has correct line')
 
-  if(opts.source)         t.equal(h.source, fn.toString(), 'includes function source')
-  else                    t.ok(!h.source, 'does not include function source')
+  if(opts.source || opts.highlight)
+    t.equal(h.source, fn.toString(), 'includes function source')
+  else
+    t.ok(!h.source, 'does not include function source')
 
   if (opts.highlight)     t.ok(h.highlighted, 'includes highlighted function source')
   else                    t.ok(!h.highlighted, 'does not include highlighted function source')

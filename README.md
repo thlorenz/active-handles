@@ -92,7 +92,7 @@ and location and name of each is resolved.</p>
 <td class="attributes">
 &lt;optional><br>
 </td>
-<td class="description last"><p>include source (default: <code>true</code>)</p></td>
+<td class="description last"><p>include source (default: <code>true</code>), included either way if <code>highlight=true</code></p></td>
 </tr>
 <tr>
 <td class="name"><code>opts.highlight</code></td>
@@ -122,7 +122,7 @@ and location and name of each is resolved.</p>
 <li>
 <a href="https://github.com/thlorenz/active-handles/blob/master/index.js">index.js</a>
 <span>, </span>
-<a href="https://github.com/thlorenz/active-handles/blob/master/index.js#L152">lineno 152</a>
+<a href="https://github.com/thlorenz/active-handles/blob/master/index.js#L33">lineno 33</a>
 </li>
 </ul></dd>
 </dl>
@@ -177,6 +177,19 @@ Type
 </dt>
 <dd>
 <span class="param-type">String</span>
+</dd>
+</dl>
+</li>
+<li>
+<div class="param-desc">
+<p>handle.anonymous     true if the function was anonymous</p>
+</div>
+<dl>
+<dt>
+Type
+</dt>
+<dd>
+<span class="param-type">Boolean</span>
 </dd>
 </dl>
 </li>
@@ -290,7 +303,7 @@ so its information can be retrieved later.</p>
 <li>
 <a href="https://github.com/thlorenz/active-handles/blob/master/index.js">index.js</a>
 <span>, </span>
-<a href="https://github.com/thlorenz/active-handles/blob/master/index.js#L227">lineno 227</a>
+<a href="https://github.com/thlorenz/active-handles/blob/master/index.js#L110">lineno 110</a>
 </li>
 </ul></dd>
 </dl>
@@ -341,7 +354,7 @@ prints the information to stdout.</p>
 <li>
 <a href="https://github.com/thlorenz/active-handles/blob/master/index.js">index.js</a>
 <span>, </span>
-<a href="https://github.com/thlorenz/active-handles/blob/master/index.js#L183">lineno 183</a>
+<a href="https://github.com/thlorenz/active-handles/blob/master/index.js#L66">lineno 66</a>
 </li>
 </ul></dd>
 </dl>
@@ -354,6 +367,19 @@ prints the information to stdout.</p>
 *generated with [docme](https://github.com/thlorenz/docme)*
 </div>
 <!-- END docme generated API please keep comment here to allow auto update -->
+
+## core
+
+A core module which depends only on `function-origin` can be used. It behaves exactly like the main module except
+that it doesn't merge `opts` with default options and provides **no highlighting** even if `highlight` is set in the options.
+Additionally it does not include the `print` feature.
+
+You can use it as follows:
+
+```js
+var activeHandles = require('active-handles/core');
+activeHandles();
+```
 
 ## License
 

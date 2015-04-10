@@ -4,7 +4,7 @@ var cardinal            = require('cardinal')
   , xtend               = require('xtend')
   , colors              = require('ansicolors')
   , format              = require('util').format
-  , getFunctionLocation = require('function-origin')
+  , core                = require('./core')
   , indexes
 
 function highlightSource(s) {
@@ -15,127 +15,12 @@ function highlightSource(s) {
   }
 }
 
-function functionInfo(fn, handle, opts) {
-  var name;
-  var src, highlighted = null;
-
-  var location = getFunctionLocation(fn)
-  // v8 zero bases lines
-  if (location) location.line++;
-
-  // handle anonymous functions and try to figure out a meaningful function name
-  var anonymous = false;
-  if (!fn.name || !fn.name.length) {
-    name = location.inferredName && location.inferredName.length
-        ? location.inferredName
-        : '__unknown_function_name__';
-
-    anonymous = true;
-  } else {
-    name = fn.name;
-  }
-
-  if (opts.highlight || opts.source) {
-    src = fn.toString();
-    if (opts.highlight) {
-      // function () { ... is not by itself parsable
-      // x = function () { .. is
-      highlighted = anonymous
-        ? highlightSource(name + ' = ' + src)
-        : highlightSource(src);
-    }
-  }
-
-  var ret = {
-      fn          : fn
-    , name        : name
-    , location    : location
-  }
-
-  if (opts.source) ret.source = src;
-  if (opts.highlight) ret.highlighted = highlighted;
-  if (opts.attachHandle) ret.handle = handle;
-
-  return ret;
-}
-
-function resolveHandle(handle, opts) {
-  var visited = {}
-    , resolvedFns = {}
-    , resolved = []
-    , fn
-    , addedInfo
-
-  function addInfo(fn) {
-    if (resolvedFns[fn]) return;
-    resolvedFns[fn] = true;
-
-    var info = functionInfo(fn, handle, opts);
-    resolved.push(info);
-    return info;
-  }
-
-  // timer handles created via setTimeout or setInterval
-  for (var next = handle._idleNext; !!next && !visited[next]; next = next._idleNext) {
-    visited[next] = true;
-    var repeatIsFn = typeof next._repeat === 'function';
-    var hasWrappedCallback = typeof next._wrappedCallback === 'function';
-
-    if (!repeatIsFn && !hasWrappedCallback && !next.hasOwnProperty('_onTimeout')) continue;
-
-    // starting with io.js 1.6.2 when using setInterval the timer handle's
-    // _repeat property references the wrapped function so we prefer that
-    fn = repeatIsFn
-        ? next._repeat
-        : hasWrappedCallback ? next._wrappedCallback : next._onTimeout;
-
-    addedInfo = addInfo(fn, next);
-    addedInfo.msecs = next._idleTimeout;
-    addedInfo.type = hasWrappedCallback || repeatIsFn ? 'setInterval' : 'setTimeout';
-  }
-
-  function addHandleFn(key) {
-    var value = handle._handle[key];
-    if (typeof value !== 'function') return;
-    var addedInfo = addInfo(value, handle._handle);
-    if (handle._handle.fd) {
-      addedInfo.fd = handle._handle.fd;
-
-      switch (key) {
-        case 'onconnection':
-          addedInfo.type = 'net connection';
-          break;
-        case 'onread':
-          addedInfo.type = 'net client connection';
-          break;
-        default:
-          addInfo.type = 'unknown';
-
-      }
-    }
-  }
-  // handles created by the net module via direct use or of http/https
-  if (handle._handle)
-    Object.keys(handle._handle).forEach(addHandleFn);
-
-  return resolved;
-}
-
-function resolveHandles(opts) {
-  var tasks = opts.handles.length;
-  var resolvedHandles = [];
-
-  function pushHandle(h) {
-    resolvedHandles.push(h);
-  }
-
-  function resolveCurrentHandle(handle) {
-    var resolved = resolveHandle(handle, opts);
-    resolved.forEach(pushHandle);
-  }
-
-  opts.handles.forEach(resolveCurrentHandle);
-  return resolvedHandles;
+function addHighlight(info) {
+    // function () { ... is not by itself parsable
+    // x = function () { .. is
+   info.highlighted = info.anonymous
+      ? highlightSource(info.name + ' = ' + info.source)
+      : highlightSource(info.source);
 }
 
 function versionGreaterEqualOneSixTwo(v) {
@@ -143,10 +28,6 @@ function versionGreaterEqualOneSixTwo(v) {
   if (digits.length !== 3) return false; // can't be sure
   if (digits[0] < 1 || digits[1] < 6 || digits[2] < 2) return false;
   return true;
-}
-
-var defaultOpts = {
-  source: true, highlight: true, attachHandle: false
 }
 
 /**
@@ -158,13 +39,14 @@ var defaultOpts = {
  * @function
  * @param  {Object}           options
  * @param  {Array.<Object>=}  opts.handles      handles to get info for (default: `process._getActiveHandles()`)
- * @param  {Boolean=}         opts.source       include source (default: `true`)
+ * @param  {Boolean=}         opts.source       include source (default: `true`), included either way if `highlight=true`
  * @param  {Boolean=}         opts.highlight    include highlighted source (default: `true`)
  * @param  {Boolean=}         opts.attachHandle attaches inspected handle for further inspection (default: `false`)
  * @return {Array.<Object>} handles each with the following properties
  * @return {Number}   handle.msecs         timeout specified for the handle
  * @return {Function} handle.fn            the handle itself
  * @return {String}   handle.name          the name of the function, for anonymous functions this is the name it was assigned to
+ * @return {Boolean}  handle.anonymous     true if the function was anonymous 
  * @return {String}   handle.source        the raw function source
  * @return {String}   handle.highlighted   the highlighted source
  * @return {Object}   handle.location      location information about the handle
@@ -174,10 +56,11 @@ var defaultOpts = {
  * @return {String}   handle.location.inferredName  name that is used when function declaration is anonymous
  */
 exports = module.exports = function activeHandles(opts) {
-  opts = xtend(defaultOpts, opts);
-  opts.handles = opts.handles || process._getActiveHandles();
-  if (!opts.handles.length) return [];
-  return resolveHandles(opts);
+  opts = xtend(core.defaultOpts, opts);
+  var infos = core(opts);
+
+  if (opts.highlight) infos.forEach(addHighlight);
+  return infos;
 }
 
 /**
@@ -193,7 +76,7 @@ exports.print = function print(opts) {
   var h, loc, locString, fdString, printed = {};
   var highlightString = '';
 
-  opts = xtend(defaultOpts, opts);
+  opts = xtend(core.defaultOpts, opts);
   opts.source = false;
 
   var handles = exports(opts);
@@ -249,6 +132,3 @@ exports.hookSetInterval = function () {
 
   timers.setInterval = setIntervalHook;
 }
-
-// used for testing
-exports._defaultOpts = defaultOpts;
