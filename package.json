@@ -1,6 +1,6 @@
 {
   "name": "active-handles",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "description": "Prints out information about the process's active handles, including function source and location",
   "main": "index.js",
   "scripts": {
